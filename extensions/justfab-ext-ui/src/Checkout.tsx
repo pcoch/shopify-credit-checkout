@@ -7,11 +7,12 @@ import {
   Button,
   Text,
   useApi,
-  Badge,
   BlockStack,
   useAppMetafields,
   useApplyCartLinesChange,
-  Icon,
+  SkeletonText,
+  SkeletonImage,
+  Banner,
 } from "@shopify/ui-extensions-react/checkout";
 
 import { useEffect, useState } from "react";
@@ -37,11 +38,9 @@ interface ProductQueryResponse {
   };
 }
 
-export default reactExtension("purchase.checkout.block.render", () => (
-  <Extension />
-));
+export default reactExtension("purchase.checkout.block.render", () => <App />);
 
-function Extension() {
+function App() {
   const { query } = useApi();
   const applyCartLinesChange = useApplyCartLinesChange();
   const [product, setProduct] = useState(null);
@@ -50,6 +49,9 @@ function Extension() {
   const [vipCreditCost, setVipCreditCost] = useState(0);
   const [isVipCreditApplied, setIsVipCreditApplied] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [isLoadingProduct, setIsLoadingProduct] = useState(false);
+  const [isUpdatingCart, setIsUpdatingCart] = useState(false);
+  const [showError, setShowError] = useState(false);
 
   const appMetafields = useAppMetafields();
   useEffect(() => {
@@ -83,6 +85,7 @@ function Extension() {
 
   useEffect(() => {
     async function fetchProduct() {
+      setIsLoadingProduct(true);
       try {
         const response = await query<ProductQueryResponse>(
           `query {
@@ -141,6 +144,9 @@ function Extension() {
       } catch (error) {
         console.error("Error fetching product:", error.message);
         setLoading(false);
+        setShowError(true);
+      } finally {
+        setIsLoadingProduct(false);
       }
     }
 
@@ -158,23 +164,36 @@ function Extension() {
   }, [isVipCreditApplied]);
 
   async function handleAddToCart() {
+    setIsUpdatingCart(true);
     setAdding(true);
-    const result = await applyCartLinesChange({
-      type: "addCartLine",
-      merchandiseId: product.variants.nodes[0].id,
-      quantity: 1,
-      attributes: [
-        {
-          key: "_vip_credit_applied",
-          value: isVipCreditApplied.toString(),
-        },
-      ],
-    });
-    setAdding(false);
+    try {
+      const result = await applyCartLinesChange({
+        type: "addCartLine",
+        merchandiseId: product.variants.nodes[0].id,
+        quantity: 1,
+        attributes: [
+          {
+            key: "_vip_credit_applied",
+            value: isVipCreditApplied.toString(),
+          },
+        ],
+      });
 
-    if (result.type === "error") {
-      console.error(result.message);
+      if (result.type === "error") {
+        console.error(result.message);
+        setShowError(true);
+      }
+    } catch (error) {
+      console.error("Error updating cart:", error);
+      setShowError(true);
+    } finally {
+      setAdding(false);
+      setIsUpdatingCart(false);
     }
+  }
+
+  if (isLoadingProduct) {
+    return <LoadingSkeleton />;
   }
 
   if (loading) return null;
@@ -243,6 +262,50 @@ function Extension() {
           onChange={setIsVipCreditApplied}
           disabled={vipCredit < vipCreditCost}
         />
+      </InlineLayout>
+      {showError && (
+        <Banner status="critical">There was an issue. Please try again.</Banner>
+      )}
+    </BlockStack>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <BlockStack spacing="loose">
+      <Heading level={2}>Your VIP Gift</Heading>
+      <InlineLayout
+        border="base"
+        borderRadius="loose"
+        padding="base"
+        spacing="base"
+        columns={["fill"]}
+        inlineAlignment="start"
+        background="subdued">
+        <SkeletonText inlineSize="large" />
+      </InlineLayout>
+      <BlockStack spacing="loose">
+        <InlineLayout
+          spacing="base"
+          columns={[74, "fill", "auto"]}
+          blockAlignment="center">
+          <SkeletonImage aspectRatio={1} />
+          <BlockStack spacing="none">
+            <SkeletonText inlineSize="large" />
+            <SkeletonText inlineSize="medium" />
+            <SkeletonText inlineSize="small" />
+          </BlockStack>
+          <SkeletonText inlineSize="small" />
+        </InlineLayout>
+      </BlockStack>
+      <InlineLayout
+        spacing="base"
+        columns={["90%", "fill"]}
+        inlineAlignment="start">
+        <BlockStack spacing="none">
+          <SkeletonText inlineSize="medium" />
+        </BlockStack>
+        <SkeletonText inlineSize="small" />
       </InlineLayout>
     </BlockStack>
   );

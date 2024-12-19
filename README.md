@@ -5,14 +5,13 @@ Apps like https://apps.shopify.com/anvil-checkout which support upsells, but the
 
 # How this app works
 
-Checkout UI extension queries API to pull in a specific VIP product
-Checkout UI checks customer metafield for total credit value
-Switch toggle component updates UI to show credit and toggles a line item attribute on the gift
-Cart Transform Function reads the attribute and runs update operation to reduce price to $0
+- Checkout UI extension queries API to pull in a specific VIP product
+- Checkout UI checks customer metafield for total credit value
+- Switch toggle component updates UI to show credit and toggles a line item attribute on the gift
+- Cart Transform Function reads the attribute and runs update operation to reduce price to $0
 
 # Things this MVP omits
 
-- No skeleton loading
 - Doesn't deduct from customer metafied is credit used (this is doable though)
 - No UI for removing gift once added - this could easily be fixed with Checkout Blocks (it can add in qty selectors)
 - Some react bugs with credit value updating need fixing...
@@ -23,11 +22,12 @@ Cart Transform Function reads the attribute and runs update operation to reduce 
 # More features to add
 
 Error Handling & Validation:
-What happens if the VIP product is out of stock? 2. What if a customer tries to add multiple VIP products? 3. Should we validate that the customer has enough credits before allowing the toggle?
+What happens if the VIP product is out of stock?
+What if a customer tries to add multiple VIP products?
+Should we validate that the customer has enough credits before allowing the toggle?
 Error handling for failed API calls or cart updates
 
 User Experience:
-Add loading states for API calls and cart updates
 Feedback messages when credits are applied/removed
 Disable the "Add" button if customer doesn't have enough credits
 Confirmation dialog before using credits
