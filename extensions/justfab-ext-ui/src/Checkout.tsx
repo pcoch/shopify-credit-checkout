@@ -13,6 +13,7 @@ import {
   SkeletonText,
   SkeletonImage,
   Banner,
+  useCustomer,
 } from "@shopify/ui-extensions-react/checkout";
 
 import { useEffect, useState } from "react";
@@ -54,6 +55,8 @@ function App() {
   const [showError, setShowError] = useState(false);
 
   const appMetafields = useAppMetafields();
+  const customer = useCustomer();
+
   useEffect(() => {
     if (appMetafields.length > 0) {
       // Get VIP credit balance
@@ -192,12 +195,18 @@ function App() {
     }
   }
 
+  if (!customer?.id) {
+    return null;
+  }
+
   if (isLoadingProduct) {
     return <LoadingSkeleton />;
   }
 
   if (loading) return null;
   if (!product) return null;
+
+  const hasNoCredits = vipCredit <= 0;
 
   return (
     <BlockStack spacing="loose">
@@ -210,8 +219,13 @@ function App() {
         columns={["fill"]}
         inlineAlignment="start"
         background="subdued">
-        <Text emphasis="bold" appearance="info" size="base">
-          ✨ You have {vipCredit} VIP Credits Remaining
+        <Text
+          emphasis="bold"
+          appearance={hasNoCredits ? "subdued" : "info"}
+          size="base">
+          {hasNoCredits
+            ? "You have no VIP Credits remaining"
+            : `✨ You have ${vipCredit} VIP Credits Remaining`}
         </Text>
       </InlineLayout>
       <BlockStack spacing="loose">
@@ -242,7 +256,11 @@ function App() {
               Required Credits: {vipCreditCost}
             </Text>
           </BlockStack>
-          <Button kind="secondary" loading={adding} onPress={handleAddToCart}>
+          <Button
+            kind="secondary"
+            loading={adding}
+            onPress={handleAddToCart}
+            disabled={hasNoCredits || adding}>
             Add
           </Button>
         </InlineLayout>
@@ -260,7 +278,7 @@ function App() {
           accessibilityLabel="my-switch"
           checked={isVipCreditApplied}
           onChange={setIsVipCreditApplied}
-          disabled={vipCredit < vipCreditCost}
+          disabled={hasNoCredits || vipCredit < vipCreditCost}
         />
       </InlineLayout>
       {showError && (
@@ -292,7 +310,7 @@ function LoadingSkeleton() {
           <SkeletonImage aspectRatio={1} />
           <BlockStack spacing="none">
             <SkeletonText inlineSize="large" />
-            <SkeletonText inlineSize="medium" />
+            <SkeletonText inlineSize="base" />
             <SkeletonText inlineSize="small" />
           </BlockStack>
           <SkeletonText inlineSize="small" />
@@ -303,7 +321,7 @@ function LoadingSkeleton() {
         columns={["90%", "fill"]}
         inlineAlignment="start">
         <BlockStack spacing="none">
-          <SkeletonText inlineSize="medium" />
+          <SkeletonText inlineSize="base" />
         </BlockStack>
         <SkeletonText inlineSize="small" />
       </InlineLayout>
