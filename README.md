@@ -1,3 +1,8 @@
+# Demo
+[Video Demo](https://screenshot.click/19-02-4z9vc-lky5q.mp4) (3 mins)
+
+[Live store](https://plustestpcoch.myshopify.com/)
+
 # Why build custom?
 
 Checkout Blocks but Upsell components are now legacy.
