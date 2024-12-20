@@ -53,6 +53,7 @@ function App() {
   const [isLoadingProduct, setIsLoadingProduct] = useState(false);
   const [isUpdatingCart, setIsUpdatingCart] = useState(false);
   const [showError, setShowError] = useState(false);
+  const [isTogglingCredit, setIsTogglingCredit] = useState(false);
 
   const appMetafields = useAppMetafields();
   const customer = useCustomer();
@@ -183,17 +184,22 @@ function App() {
       });
 
       if (result.type === "error") {
-        console.error(result.message);
         setShowError(true);
       }
     } catch (error) {
-      console.error("Error updating cart:", error);
       setShowError(true);
     } finally {
       setAdding(false);
       setIsUpdatingCart(false);
     }
   }
+
+  const handleCreditToggle = async (newValue: boolean) => {
+    setIsTogglingCredit(true);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    setIsVipCreditApplied(newValue);
+    setIsTogglingCredit(false);
+  };
 
   if (!customer?.id) {
     return null;
@@ -245,22 +251,33 @@ function App() {
             <Text size="medium" emphasis="bold">
               {product.title}
             </Text>
-            <Text
-              size="base"
-              appearance={isVipCreditApplied ? "success" : "subdued"}>
-              {isVipCreditApplied
-                ? "Free - Credit Applied ✓"
-                : `$${product.variants.nodes[0].price.amount}`}
-            </Text>
-            <Text size="base" appearance="accent">
-              Required Credits: {vipCreditCost}
-            </Text>
+            {isTogglingCredit ? (
+              <PriceLoadingSkeleton />
+            ) : (
+              <>
+                <Text
+                  size="base"
+                  appearance={isVipCreditApplied ? "success" : "subdued"}>
+                  {isVipCreditApplied
+                    ? "Free - Credit Applied ✓"
+                    : `$${product.variants.nodes[0].price.amount}`}
+                </Text>
+                <Text size="base" appearance="accent">
+                  Required Credits: {vipCreditCost}
+                </Text>
+              </>
+            )}
           </BlockStack>
           <Button
             kind="secondary"
             loading={adding}
             onPress={handleAddToCart}
-            disabled={hasNoCredits || adding}>
+            disabled={
+              hasNoCredits ||
+              adding ||
+              !isVipCreditApplied ||
+              vipCredit < vipCreditCost
+            }>
             Add
           </Button>
         </InlineLayout>
@@ -270,15 +287,23 @@ function App() {
         columns={["90%", "fill"]}
         inlineAlignment="start">
         <BlockStack spacing="none">
-          <Text size="base" emphasis="italic">
-            Apply VIP Credit?
-          </Text>
+          {isTogglingCredit ? (
+            <Text size="base" emphasis="italic">
+              <SkeletonText inlineSize="small" />
+            </Text>
+          ) : (
+            <Text size="base" emphasis="italic">
+              {isVipCreditApplied ? "VIP Credit Applied" : "Apply VIP Credit?"}
+            </Text>
+          )}
         </BlockStack>
         <Switch
           accessibilityLabel="my-switch"
           checked={isVipCreditApplied}
-          onChange={setIsVipCreditApplied}
-          disabled={hasNoCredits || vipCredit < vipCreditCost}
+          onChange={handleCreditToggle}
+          disabled={
+            hasNoCredits || vipCredit < vipCreditCost || isTogglingCredit
+          }
         />
       </InlineLayout>
       {showError && (
@@ -318,7 +343,7 @@ function LoadingSkeleton() {
       </BlockStack>
       <InlineLayout
         spacing="base"
-        columns={["90%", "fill"]}
+        columns={["90%", "auto"]}
         inlineAlignment="start">
         <BlockStack spacing="none">
           <SkeletonText inlineSize="base" />
@@ -326,5 +351,18 @@ function LoadingSkeleton() {
         <SkeletonText inlineSize="small" />
       </InlineLayout>
     </BlockStack>
+  );
+}
+
+function PriceLoadingSkeleton() {
+  return (
+    <>
+      <Text size="base">
+        <SkeletonText inlineSize="small" />
+      </Text>
+      <Text size="base" appearance="accent">
+        <SkeletonText inlineSize="small" />
+      </Text>
+    </>
   );
 }
