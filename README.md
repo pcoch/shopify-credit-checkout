@@ -4,6 +4,8 @@
 
 [Live store](https://plustestpcoch.myshopify.com/)
 
+![alt text](image.png)
+
 # Why build custom?
 
 Checkout Blocks but Upsell components are now legacy.
